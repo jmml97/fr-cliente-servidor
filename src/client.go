@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/binary"
 	"fmt"
@@ -60,16 +61,18 @@ func sendImage(conn net.Conn, imageFile *os.File) {
 func main() {
 
 	// Nos conectamos al socket tcp
-	conn, err := net.Dial("tcp", "localhost:8081")
+	conn, err := net.Dial("tcp", "127.0.0.1:8081")
 	handleError(err, "No se ha podido establecer la conexión con el servidor", 3)
 	defer conn.Close()
 
 	// Creamos un lector para leer desde stdin
-	//reader := bufio.NewReader(os.Stdin)
+	scanner := bufio.NewScanner(os.Stdin)
 
 	// Leemos el nombre del archivo
-	//filename, _ := reader.ReadString('\n')
-	filename := "test/test.jpeg"
+	fmt.Println("Introduce la ruta del archivo a convertir")
+	scanner.Scan()
+	filename := scanner.Text()
+	//filename := "test.jpeg"
 
 	// Leemos el archivo de la imagen especificada
 	existingImageFile, err := os.Open(filename)
@@ -90,4 +93,5 @@ func main() {
 	newImageFile.Write(newImage.Bytes())
 
 	fmt.Println("¡Imagen convertida recibida!")
+
 }
