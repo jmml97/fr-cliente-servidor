@@ -95,8 +95,14 @@ func main() {
 	handleError(err, "No se ha podido establecer la conexión con el servidor", 3)
 	defer conn.Close()
 
+	// Bucle del programa. Podemos convertir imágenes hasta que decidamos
+	// terminar la ejecución del programa
 	for {
+
+		// Mostramos el menú que recibe del servidor
 		reveiveMenu(conn)
+
+		// Pedimos al usuario la opción que se enviará al servidor
 		option := writeOption(conn)
 
 		var outExtension string
@@ -115,7 +121,6 @@ func main() {
 		fmt.Println("Introduce la ruta del archivo a convertir")
 		scanner.Scan()
 		filename := scanner.Text()
-		//filename := "test.jpeg"
 
 		// Leemos el archivo de la imagen especificada
 		existingImageFile, err := os.Open(filename)

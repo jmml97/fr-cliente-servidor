@@ -27,14 +27,11 @@ func handleError(err error, text string, code int) {
 func convertJPEGToPNG(w io.Writer, r io.Reader) error {
 	img, err := jpeg.Decode(r)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("err:", err)
 		return err
 	}
-	err = png.Encode(w, img)
-	if err != nil {
-		fmt.Println(err)
-	}
-	return err
+
+	return png.Encode(w, img)
 }
 
 func convertPNGToJPEG(w io.Writer, r io.Reader) error {
@@ -44,11 +41,7 @@ func convertPNGToJPEG(w io.Writer, r io.Reader) error {
 		return err
 	}
 
-	err = jpeg.Encode(w, img, nil)
-	if err != nil {
-		fmt.Println(err)
-	}
-	return err
+	return jpeg.Encode(w, img, nil)
 
 }
 
@@ -101,10 +94,12 @@ func showMenu(conn net.Conn) {
 }
 
 func reveiveOption(conn net.Conn) int {
+
+	// Utilizamos # como carácter para marcar el fin del mensaje
 	optionString, _ := bufio.NewReader(conn).ReadString('#')
+
+	// Eliminamos # del mensaje y convertimos la opción a int
 	option, _ := strconv.Atoi(strings.Trim(optionString, "#"))
-	fmt.Println(optionString)
-	fmt.Println(option)
 	return option
 }
 
@@ -124,10 +119,13 @@ func main() {
 
 			for {
 
+				// Enviamos el menú al cliente
 				showMenu(conn)
 
 				option := reveiveOption(conn)
 
+				// Si el cliente ha terminado su ejecución no hay que recibir
+				// imagen.
 				if option == 3 {
 					fmt.Println("Se termina la ejecución del cliente")
 					break
@@ -146,8 +144,6 @@ func main() {
 				case 2:
 					convertJPEGToPNG(writer, reader)
 				}
-
-				fmt.Println(len(newImage.Bytes()))
 
 				fmt.Println("Imagen convertida")
 				sendImage(conn, newImage.Bytes())
