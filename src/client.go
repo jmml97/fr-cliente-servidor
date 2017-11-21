@@ -8,6 +8,9 @@ import (
 	"io"
 	"net"
 	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
 )
 
 func handleError(err error, text string, code int) {
@@ -58,6 +61,33 @@ func sendImage(conn net.Conn, imageFile *os.File) {
 
 }
 
+func reveiveMenu(conn net.Conn) {
+
+	// \f simboliza fin del mensaje
+	menuMessage, _ := bufio.NewReader(conn).ReadString('\f')
+	fmt.Print("Mensaje del servidor:\n" + menuMessage)
+
+}
+
+func writeOption(conn net.Conn) int {
+
+	// Creamos un lector para leer desde stdin
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Scan()
+	option := scanner.Text()
+
+	conn.Write([]byte(option + "#"))
+
+	if option == "3" {
+		fmt.Println("Ejecución cancelada")
+		os.Exit(10)
+	}
+
+	optionInt, _ := strconv.Atoi(option)
+
+	return optionInt
+}
+
 func main() {
 
 	// Nos conectamos al socket tcp
@@ -65,33 +95,48 @@ func main() {
 	handleError(err, "No se ha podido establecer la conexión con el servidor", 3)
 	defer conn.Close()
 
-	// Creamos un lector para leer desde stdin
-	scanner := bufio.NewScanner(os.Stdin)
+	for {
+		reveiveMenu(conn)
+		option := writeOption(conn)
 
-	// Leemos el nombre del archivo
-	fmt.Println("Introduce la ruta del archivo a convertir")
-	scanner.Scan()
-	filename := scanner.Text()
-	//filename := "test.jpeg"
+		var outExtension string
 
-	// Leemos el archivo de la imagen especificada
-	existingImageFile, err := os.Open(filename)
-	handleError(err, "No se ha podido abrir el archivo: "+filename, 4)
-	defer existingImageFile.Close()
+		switch option {
+		case 1:
+			outExtension = ".jpeg"
+		case 2:
+			outExtension = ".png"
+		}
 
-	sendImage(conn, existingImageFile)
+		// Creamos un lector para leer desde stdin
+		scanner := bufio.NewScanner(os.Stdin)
 
-	// Creamos el archivo en el que se guardará la imagen convertida
-	newImageFile, err := os.Create("test.png")
-	handleError(err, "No se ha podido crear el archivo de la imagen convertida", 4)
-	defer newImageFile.Close()
+		// Leemos el nombre del archivo
+		fmt.Println("Introduce la ruta del archivo a convertir")
+		scanner.Scan()
+		filename := scanner.Text()
+		//filename := "test.jpeg"
 
-	// Recibimos los bytes de la imagen del servidor
-	newImage := receiveImage(conn)
+		// Leemos el archivo de la imagen especificada
+		existingImageFile, err := os.Open(filename)
+		handleError(err, "No se ha podido abrir el archivo: "+filename, 4)
+		defer existingImageFile.Close()
 
-	// Escribimos los bytes en el archivo que creamos antes
-	newImageFile.Write(newImage.Bytes())
+		sendImage(conn, existingImageFile)
 
-	fmt.Println("¡Imagen convertida recibida!")
+		newFilename := strings.TrimSuffix(filename, filepath.Ext(filename)) + outExtension
+		// Creamos el archivo en el que se guardará la imagen convertida
+		newImageFile, err := os.Create(newFilename)
+		handleError(err, "No se ha podido crear el archivo de la imagen convertida", 4)
+		defer newImageFile.Close()
+
+		// Recibimos los bytes de la imagen del servidor
+		newImage := receiveImage(conn)
+
+		// Escribimos los bytes en el archivo que creamos antes
+		newImageFile.Write(newImage.Bytes())
+
+		fmt.Println("¡Imagen convertida recibida!")
+	}
 
 }

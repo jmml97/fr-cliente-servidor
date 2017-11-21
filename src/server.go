@@ -10,6 +10,8 @@ import (
 	"io"
 	"net"
 	"os"
+	"strconv"
+	"strings"
 )
 
 func handleError(err error, text string, code int) {
@@ -25,9 +27,29 @@ func handleError(err error, text string, code int) {
 func convertJPEGToPNG(w io.Writer, r io.Reader) error {
 	img, err := jpeg.Decode(r)
 	if err != nil {
+		fmt.Println(err)
 		return err
 	}
-	return png.Encode(w, img)
+	err = png.Encode(w, img)
+	if err != nil {
+		fmt.Println(err)
+	}
+	return err
+}
+
+func convertPNGToJPEG(w io.Writer, r io.Reader) error {
+	img, err := png.Decode(r)
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	err = jpeg.Encode(w, img, nil)
+	if err != nil {
+		fmt.Println(err)
+	}
+	return err
+
 }
 
 func receiveImage(conn net.Conn) bytes.Buffer {
@@ -69,6 +91,23 @@ func sendImage(conn net.Conn, imageData []byte) {
 
 }
 
+func showMenu(conn net.Conn) {
+	// \f simboliza fin del mensaje
+	menuMessage := "Seleccione el tipo conversión que quiere realizar\n" +
+		"1- PNG a JPEG\n" +
+		"2- JPEG a PNG\n" +
+		"3- Salir\n\f"
+	conn.Write([]byte(menuMessage))
+}
+
+func reveiveOption(conn net.Conn) int {
+	optionString, _ := bufio.NewReader(conn).ReadString('#')
+	option, _ := strconv.Atoi(strings.Trim(optionString, "#"))
+	fmt.Println(optionString)
+	fmt.Println(option)
+	return option
+}
+
 func main() {
 
 	fmt.Println("Iniciando el servidor...")
@@ -83,18 +122,40 @@ func main() {
 
 		go func() { // goroutine concurrente
 
-			fmt.Println("Comienza la recepción de la imagen")
-			oldImage := receiveImage(conn)
-			fmt.Println("Imagen a convertir recibida")
-			reader := bytes.NewReader(oldImage.Bytes())
-			var newImage bytes.Buffer
-			writer := bufio.NewWriter(&newImage)
-			convertJPEGToPNG(writer, reader)
-			fmt.Println("Imagen convertida")
-			sendImage(conn, newImage.Bytes())
-			fmt.Println("Imagen enviada al cliente")
+			for {
+
+				showMenu(conn)
+
+				option := reveiveOption(conn)
+
+				if option == 3 {
+					fmt.Println("Se termina la ejecución del cliente")
+					break
+				}
+
+				fmt.Println("Comienza la recepción de la imagen")
+				oldImage := receiveImage(conn)
+				fmt.Println("Imagen a convertir recibida")
+				reader := bytes.NewReader(oldImage.Bytes())
+				var newImage bytes.Buffer
+				writer := bufio.NewWriter(&newImage)
+
+				switch option {
+				case 1:
+					convertPNGToJPEG(writer, reader)
+				case 2:
+					convertJPEGToPNG(writer, reader)
+				}
+
+				fmt.Println(len(newImage.Bytes()))
+
+				fmt.Println("Imagen convertida")
+				sendImage(conn, newImage.Bytes())
+				fmt.Println("Imagen enviada al cliente")
+			}
 
 		}()
+
 	}
 
 }
