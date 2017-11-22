@@ -140,7 +140,8 @@ En nuestro modelo, el cliente actúa como un usuario que posee una imagen en un 
 
 Utilizaremos sockets TCP como medio de comunicación entre el cliente y el servidor, pues al tratarse de una imagen, no podemos permitir que se pierdan datos en el proceso, que lleguen desordenados, etc. Además, el servidor procesará las peticiones de varios clientes de forma \textbf{concurrente}.\\
 
-A grandes rasgos, el funcionamiento es el siguiente: el cliente establece una conexión con el servidor, que le proporciona un menú donde elegir el formato de conversión. Una vez elegido, el cliente envía por el canal TCP la imagen como una cadena de bytes, y el servidor la recibe, la procesa, y la devuelve de nuevo como una cadena de bytes, ya en el formato correcto.\\
+A grandes rasgos, el funcionamiento es el siguiente: el cliente establece una conexión con 
+el servidor, que le proporciona un menú donde elegir el formato de conversión. Una vez elegido, el cliente envía por el canal TCP la imagen como una cadena de bytes, y el servidor la recibe, la procesa, y la devuelve de nuevo como una cadena de bytes, ya en el formato correcto.\\
 
 El lenguaje elegido para programar la aplicación es \textbf{Go}. Hemos elegido este lenguaje por su facilidad de gestión de servicios en red, así como la simplicidad con la que gestiona la concurrencia (mediante las llamadas \textit{goroutines}). Empleamos una librería de conversión de imágenes para aportar la funcionalidad deseada.
 \newpage 
@@ -154,15 +155,15 @@ Mostramos ahora un diagrama de los posibles estados en los que puede encontrarse
 
 \section{Mensajes que intervienen}
 
-Los distintos mensajes que intervienen en la comunicación son los siguientes.
+Los distintos mensajes que intervienen en la comunicación son los siguientes. Los errores se manejan de forma apropiada dentro de los programas del cliente y del servidor.
 
-\subsection{Servidor}
+\subsection{Cliente}
 \begin{center}
 	\begin{tabular}{|c|c|c|}
 	\hline
 	Código & Cuerpo & Descripción\\
 	\hline
-	00 & OPT o & Opción de formato a convertir: o\\
+	00 & OPT + o & Opción de formato a convertir: o\\
 	\hline
 	01 & IMG\_I + img & Datos de la imagen a convertir: img\\
 	\hline
@@ -170,7 +171,7 @@ Los distintos mensajes que intervienen en la comunicación son los siguientes.
 \end{center}
 
 
-\subsection{Cliente}
+\subsection{Servidor}
 \begin{center}
 	\begin{tabular}{|c|c|c|}
 	\hline
