@@ -60,7 +60,7 @@ func receiveImage(conn net.Conn) bytes.Buffer {
 	n, err := io.CopyN(&receivedImage, conn, receivedImageSize)
 	handleError(err, "Error durante la recepción de la imagen", 1)
 
-	fmt.Println(n, "bytes recibidos")
+	fmt.Println("IMG_I ", n, "bytes recibidos")
 	return receivedImage
 
 }
@@ -100,6 +100,8 @@ func reveiveOption(conn net.Conn) int {
 
 	// Eliminamos # del mensaje y convertimos la opción a int
 	option, _ := strconv.Atoi(strings.Trim(optionString, "#"))
+
+  fmt.Println("OPT Recibida opción", option)
 	return option
 }
 
@@ -117,8 +119,9 @@ func main() {
 
 		go func() { // goroutine concurrente
 
-			for {
+      conn.Write([]byte("HELLO\n\f"))
 
+			for {
 				// Enviamos el menú al cliente
 				showMenu(conn)
 
@@ -128,11 +131,15 @@ func main() {
 				// imagen.
 				if option == 3 {
 					fmt.Println("Se termina la ejecución del cliente")
+          conn.Write([]byte("BYE\n\f"))
 					break
 				}
 
+        conn.Write([]byte("OK\n\f"))
+
 				fmt.Println("Comienza la recepción de la imagen")
 				oldImage := receiveImage(conn)
+        conn.Write([]byte("OK\n\f"))
 				fmt.Println("Imagen a convertir recibida")
 				reader := bytes.NewReader(oldImage.Bytes())
 				var newImage bytes.Buffer
