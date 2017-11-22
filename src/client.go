@@ -61,11 +61,11 @@ func sendImage(conn net.Conn, imageFile *os.File) {
 
 }
 
-func reveiveMessage(conn net.Conn) {
+func reveiveMenu(conn net.Conn) {
 
 	// \f simboliza fin del mensaje
-	message, _ := bufio.NewReader(conn).ReadString('\f')
-	fmt.Print("Mensaje del servidor:\n" + message)
+	menuMessage, _ := bufio.NewReader(conn).ReadString('\f')
+	fmt.Print("Mensaje del servidor:\n" + menuMessage)
 
 }
 
@@ -80,7 +80,6 @@ func writeOption(conn net.Conn) int {
 
 	if option == "3" {
 		fmt.Println("Ejecución cancelada")
-    reveiveMessage(conn)
 		os.Exit(10)
 	}
 
@@ -96,20 +95,15 @@ func main() {
 	handleError(err, "No se ha podido establecer la conexión con el servidor", 3)
 	defer conn.Close()
 
-  reveiveMessage(conn); // Esperamos HELLO
-
 	// Bucle del programa. Podemos convertir imágenes hasta que decidamos
 	// terminar la ejecución del programa
 	for {
 
 		// Mostramos el menú que recibe del servidor
-		reveiveMessage(conn)
+		reveiveMenu(conn)
 
 		// Pedimos al usuario la opción que se enviará al servidor
 		option := writeOption(conn)
-
-    // Esperamos OK
-    reveiveMessage(conn)
 
 		var outExtension string
 
@@ -134,9 +128,6 @@ func main() {
 		defer existingImageFile.Close()
 
 		sendImage(conn, existingImageFile)
-
-    // Esperamos OK
-    reveiveMessage(conn)
 
 		newFilename := strings.TrimSuffix(filename, filepath.Ext(filename)) + outExtension
 		// Creamos el archivo en el que se guardará la imagen convertida
